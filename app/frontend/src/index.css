@@ -1,0 +1,116 @@
+@import './styles/animations.css';
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  body {
+    @apply bg-verbo-dark text-verbo-light;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-primary-600 hover:bg-primary-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-verbo-dark;
+  }
+
+  .btn-secondary {
+    @apply bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:ring-offset-verbo-dark;
+  }
+
+  .input-field {
+    @apply w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent;
+  }
+
+  .card {
+    @apply bg-gray-800 rounded-lg p-6 shadow-lg border border-gray-700;
+  }
+
+  .letter-tile {
+    @apply w-12 h-12 sm:w-14 sm:h-14 border-2 border-gray-600 flex items-center justify-center text-xl font-bold uppercase transition-all duration-200;
+  }
+
+  .letter-tile.correct {
+    @apply bg-verbo-green border-verbo-green text-white;
+  }
+
+  .letter-tile.present {
+    @apply bg-verbo-yellow border-verbo-yellow text-white;
+  }
+
+  .letter-tile.absent {
+    @apply bg-verbo-gray border-verbo-gray text-white;
+  }
+
+  .letter-tile.empty {
+    @apply border-gray-600 bg-transparent;
+  }
+
+  .keyboard-key {
+    @apply px-3 py-4 bg-gray-600 hover:bg-gray-500 text-white font-medium rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500;
+  }
+
+  .keyboard-key.correct {
+    @apply bg-verbo-green hover:bg-verbo-green/90;
+  }
+
+  .keyboard-key.present {
+    @apply bg-verbo-yellow hover:bg-verbo-yellow/90;
+  }
+
+  .keyboard-key.absent {
+    @apply bg-verbo-gray hover:bg-verbo-gray/90;
+  }
+}
+
+@layer utilities {
+  .text-shadow {
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  }
+
+  .animate-bounce-in {
+    animation: bounceIn 0.6s ease-out;
+  }
+
+  .animate-shake {
+    animation: shake 0.5s ease-in-out;
+  }
+
+  .animate-flip {
+    animation: flip 0.6s ease-in-out;
+  }
+
+  .animate-pop {
+    animation: pop 0.3s ease-out;
+  }
+
+  .animate-error-shake {
+    animation: errorShake 0.5s ease-in-out;
+  }
+}
+
+@keyframes errorShake {
+  0%,
+  100% {
+    transform: translateX(0);
+    background-color: rgb(239 68 68);
+  }
+  25% {
+    transform: translateX(-2px);
+    background-color: rgb(249 115 22);
+  }
+  75% {
+    transform: translateX(2px);
+    background-color: rgb(249 115 22);
+  }
+}
