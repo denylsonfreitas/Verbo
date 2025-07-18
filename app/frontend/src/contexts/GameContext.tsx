@@ -30,6 +30,7 @@ interface GameState {
   wordLength: number;
   maxGuesses: number;
   wordOfDay: string;
+  verbId: string;
   loading: {
     game: boolean;
     submit: boolean;
@@ -44,7 +45,7 @@ interface GameState {
 }
 
 type GameAction =
-  | { type: 'SET_WORD'; payload: string }
+  | { type: 'SET_WORD'; payload: { word: string; verbId: string } }
   | { type: 'ADD_LETTER'; payload: string }
   | { type: 'REMOVE_LETTER' }
   | { type: 'SUBMIT_GUESS' }
@@ -70,6 +71,7 @@ const initialState: GameState = {
   wordLength: 5,
   maxGuesses: 6,
   wordOfDay: '',
+  verbId: '',
   loading: {
     game: true,
     submit: false,
@@ -234,8 +236,9 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
     case 'SET_WORD':
       return {
         ...state,
-        wordOfDay: action.payload,
-        wordLength: action.payload.length,
+        wordOfDay: action.payload.word,
+        verbId: action.payload.verbId,
+        wordLength: action.payload.word.length,
         loading: {
           game: false,
           submit: false,
@@ -457,39 +460,43 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({
 
   // Registrar estatísticas quando o jogo terminar
   useEffect(() => {
-    if (
-      gameState.gameOver &&
-      gameState.wordOfDay &&
-      !gameState.loading.game &&
-      !gameState.statsRecorded
-    ) {
-      if (gameState.win) {
-        // Registrar vitória com o número de tentativas
-        const attempts = gameState.guesses.length;
-        statsService.recordWin(attempts);
-      } else {
-        // Registrar derrota
-        statsService.recordLoss();
+    const recordStats = async () => {
+      if (
+        gameState.gameOver &&
+        gameState.wordOfDay &&
+        !gameState.loading.game &&
+        !gameState.statsRecorded
+      ) {
+        if (gameState.win) {
+          // Registrar vitória com o número de tentativas
+          const attempts = gameState.guesses.length;
+          statsService.recordWin(attempts);
+        } else {
+          // Registrar derrota
+          statsService.recordLoss();
+        }
+
+        // Salvar no histórico
+        const today = getLocalDateString();
+        const historyEntry: WordHistoryEntry = {
+          date: today,
+          word: gameState.wordOfDay,
+          guesses: gameState.guesses,
+          completed: true,
+          won: gameState.win,
+          attempts: gameState.win
+            ? gameState.guesses.length
+            : gameState.maxGuesses,
+          timestamp: new Date().toISOString(),
+        };
+        historyService.addEntry(historyEntry);
+
+        // Marcar como registrado para evitar duplicatas
+        dispatch({ type: 'MARK_STATS_RECORDED' });
       }
+    };
 
-      // Salvar no histórico
-      const today = getLocalDateString();
-      const historyEntry: WordHistoryEntry = {
-        date: today,
-        word: gameState.wordOfDay,
-        guesses: gameState.guesses,
-        completed: true,
-        won: gameState.win,
-        attempts: gameState.win
-          ? gameState.guesses.length
-          : gameState.maxGuesses,
-        timestamp: new Date().toISOString(),
-      };
-      historyService.addEntry(historyEntry);
-
-      // Marcar como registrado para evitar duplicatas
-      dispatch({ type: 'MARK_STATS_RECORDED' });
-    }
+    recordStats();
   }, [
     gameState.gameOver,
     gameState.win,
@@ -498,6 +505,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({
     gameState.loading.game,
     gameState.statsRecorded,
     gameState.maxGuesses,
+    gameState.verbId,
   ]);
 
   useEffect(() => {
@@ -511,6 +519,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({
       try {
         const data = await api.get('/api/verb/day');
         const wordOfDay = data?.word || 'comer';
+        const verbId = data?.id || '';
 
         // Tentar carregar estado salvo para o dia de hoje
         const savedState = loadGameState();
@@ -520,10 +529,10 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({
           dispatch({ type: 'LOAD_SAVED_STATE', payload: savedState });
         } else {
           // Caso contrário, iniciar novo jogo
-          dispatch({ type: 'SET_WORD', payload: wordOfDay });
+          dispatch({ type: 'SET_WORD', payload: { word: wordOfDay, verbId } });
         }
       } catch (error) {
-        dispatch({ type: 'SET_WORD', payload: 'comer' });
+        dispatch({ type: 'SET_WORD', payload: { word: 'comer', verbId: '' } });
       }
     };
     fetchWord();
