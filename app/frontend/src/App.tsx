@@ -17,9 +17,9 @@ function App() {
             v7_relativeSplatPath: true,
           }}
         >
-          <div className="min-h-screen bg-verbo-dark">
+          <div className="h-screen bg-verbo-dark flex flex-col overflow-hidden">
             <Header />
-            <main className="container mx-auto px-4 py-8">
+            <main className="flex-1 min-h-0 overflow-auto">
               <Routes>
                 <Route path="/" element={<Game />} />
                 <Route path="/stats" element={<Stats />} />
