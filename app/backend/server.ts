@@ -7,6 +7,8 @@ import connectDB from './config/database';
 import verbRoutes from './routes/verbRoutes';
 import wordRoutes from './routes/wordRoutes';
 import adminRoutes from './routes/adminRoutes';
+import authRoutes from './routes/authRoutes';
+import adminAuthRoutes from './routes/adminAuthRoutes';
 import { errorHandler } from './middleware/errorHandler';
 
 dotenv.config();
@@ -44,6 +46,8 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // Rotas
+app.use('/api/auth', authRoutes);
+app.use('/api/admin-auth', adminAuthRoutes);
 app.use('/api/verb', verbRoutes);
 app.use('/api/words', wordRoutes);
 app.use('/api/admin', adminRoutes);
