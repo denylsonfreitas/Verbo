@@ -1,12 +1,15 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import GameBoard from '../components/GameBoard';
 import Keyboard from '../components/Keyboard';
 import KeyboardLegend from '../components/KeyboardLegend';
 import GameResult from '../components/GameResult';
 import Tutorial from '../components/Tutorial';
 import Toast from '../components/Toast';
+import SaveStatsBanner from '../components/SaveStatsBanner';
 import { useGame } from '../contexts/GameContext';
 import { useTutorial } from '../contexts/TutorialContext';
+import { useAuth } from '../contexts/AuthContext';
+import { statsService } from '../services/statsService';
 
 const Game: React.FC = () => {
   const {
@@ -17,10 +20,29 @@ const Game: React.FC = () => {
     resetGame,
     insertLetterAtPosition,
     setSelectedPosition,
+    hideError,
   } = useGame();
   const { showError, errorMessage } = gameState;
+  const { state: authState } = useAuth();
+  const [showSaveStatsBanner, setShowSaveStatsBanner] = useState(false);
 
   const { showTutorial, completeTutorial, hideTutorial } = useTutorial();
+
+  // Mostrar banner de salvar estatísticas para usuários não autenticados após vitória
+  useEffect(() => {
+    if (
+      gameState.gameOver &&
+      gameState.win &&
+      !authState.isAuthenticated &&
+      gameState.statsRecorded
+    ) {
+      // Delay para mostrar após o resultado
+      const timer = setTimeout(() => {
+        setShowSaveStatsBanner(true);
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [gameState.gameOver, gameState.win, authState.isAuthenticated, gameState.statsRecorded]);
 
   const handleCloseTutorial = () => {
     completeTutorial();
@@ -43,7 +65,30 @@ const Game: React.FC = () => {
   // Adicionar listener para teclado físico
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      // Não processar eventos se estiver em game over
       if (gameState.gameOver) return;
+
+      // Não processar eventos se há modais de autenticação abertos
+      if (authState.showLoginModal || authState.showRegisterModal) {
+        return;
+      }
+
+      // Não processar eventos se o usuário estiver digitando em um input/textarea/modal
+      const target = event.target as HTMLElement;
+      const inputElement = target as HTMLInputElement;
+      if (
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.contentEditable === 'true' ||
+        target.closest('[role="dialog"]') ||
+        target.closest('.modal') ||
+        // Verifica se há modais abertos (classe comum em modais)
+        document.querySelector('.fixed.inset-0') ||
+        // Verifica se há focus em elementos de formulário
+        (inputElement.type && ['text', 'email', 'password', 'search'].includes(inputElement.type))
+      ) {
+        return;
+      }
 
       const key = event.key;
 
@@ -73,6 +118,8 @@ const Game: React.FC = () => {
     gameState.gameOver,
     gameState.selectedPosition,
     gameState.wordLength,
+    authState.showLoginModal,
+    authState.showRegisterModal,
     submitGuess,
     removeLetter,
     insertLetterAtPosition,
@@ -80,40 +127,44 @@ const Game: React.FC = () => {
   ]);
 
   return (
-    <div className="h-full flex flex-col items-center">
+    <div className="h-full flex flex-col">
       <Tutorial isOpen={showTutorial} onClose={handleCloseTutorial} />
 
-      {/* Container principal com altura controlada */}
-      <div className="flex flex-col items-center w-full max-w-lg px-2 py-2 sm:max-w-2xl sm:px-4 container mx-auto">
+      {/* Container principal centralizado com padding responsivo */}
+      <div className="flex-1 flex flex-col items-center justify-center px-2 py-2 sm:px-4 sm:py-4 min-h-0">
         
-        {/* GameBoard */}
-        <div className="flex-shrink-0 mb-2 sm:mb-3">
-          <GameBoard />
+        {/* Container do jogo com largura controlada e centralizado */}
+        <div className="w-full max-w-md sm:max-w-lg flex flex-col items-center space-y-2 sm:space-y-3 overflow-hidden">
+          
+          {/* GameBoard */}
+          <div className="flex-shrink-0">
+            <GameBoard />
+          </div>
+
+          {/* Conteúdo central - GameResult quando jogo termina */}
+          {gameState.gameOver && (
+            <div className="flex-shrink-0">
+              <GameResult
+                wordOfDay={gameState.wordOfDay}
+                win={gameState.win}
+                guesses={gameState.guesses}
+                maxGuesses={gameState.maxGuesses}
+              />
+            </div>
+          )}
+
+          {/* Teclado e legenda - sempre centralizados */}
+          {!gameState.gameOver && (
+            <div className="flex-shrink-0 w-full flex flex-col items-center space-y-1 sm:space-y-2">
+              <Keyboard 
+                onKeyPress={handleKeyPress} 
+                guesses={gameState.guesses} 
+                disabled={gameState.loading.submit || gameState.loading.validate}
+              />
+              <KeyboardLegend className="text-xs sm:text-sm" guesses={gameState.guesses} />
+            </div>
+          )}
         </div>
-
-        {/* Conteúdo central - GameResult quando jogo termina */}
-        {gameState.gameOver && (
-          <div className="flex-shrink-0 mb-2 sm:mb-3">
-            <GameResult
-              wordOfDay={gameState.wordOfDay}
-              win={gameState.win}
-              guesses={gameState.guesses}
-              maxGuesses={gameState.maxGuesses}
-            />
-          </div>
-        )}
-
-        {/* Teclado sempre logo após o GameBoard */}
-        {!gameState.gameOver && (
-          <div className="flex-shrink-0 w-full space-y-0.5 sm:space-y-1">
-            <Keyboard 
-              onKeyPress={handleKeyPress} 
-              guesses={gameState.guesses} 
-              disabled={gameState.loading.submit || gameState.loading.validate}
-            />
-            <KeyboardLegend className="text-xs sm:text-sm" guesses={gameState.guesses} />
-          </div>
-        )}
       </div>
       
       {/* Toast para feedback visual melhorado - substitui o ErrorMessage */}
@@ -121,7 +172,15 @@ const Game: React.FC = () => {
         show={showError}
         message={errorMessage}
         type="error"
-        onClose={() => {}} // Auto-close no GameContext
+        onClose={hideError}
+      />
+
+      {/* Banner para promover criação de conta após vitórias */}
+      <SaveStatsBanner
+        show={showSaveStatsBanner}
+        onClose={() => setShowSaveStatsBanner(false)}
+        gamesWon={statsService.loadStats().gamesWon}
+        totalGames={statsService.loadStats().gamesPlayed}
       />
     </div>
   );

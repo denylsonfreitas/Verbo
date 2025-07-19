@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { statsService, GameStats } from '../services/statsService';
 import WordHistory from '../components/WordHistory';
 import Modal from '../components/Modal';
+import { useAuth } from '../contexts/AuthContext';
 import { RotateCcw, Trophy, Target, TrendingUp, Calendar, Award } from 'lucide-react';
 
 const Stats: React.FC = () => {
+  const { resetUserStats } = useAuth();
   const [stats, setStats] = useState<
     (GameStats & { winRate: number; averageAttempts: number }) | null
   >(null);
@@ -27,6 +29,7 @@ const Stats: React.FC = () => {
 
   const confirmResetStats = () => {
     statsService.resetStats();
+    resetUserStats(); // Atualiza o contexto de autenticação
     const formattedStats = statsService.getFormattedStats();
     setStats(formattedStats);
     setShowModal(false);

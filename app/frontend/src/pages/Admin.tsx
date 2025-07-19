@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { adminService, Verb, NewVerb } from '../services/adminService';
 import { wordService, CommonWord, WordFilters } from '../services/wordService';
 import { historyService } from '../services/historyService';
+import { useAuth } from '../contexts/AuthContext';
 import { 
   Target, 
   FileText, 
@@ -18,7 +19,8 @@ import {
   Shield,
   Eye,
   EyeOff,
-  LucideIcon
+  LucideIcon,
+  LogIn
 } from 'lucide-react';
 
 // Modal simples personalizado
@@ -52,9 +54,8 @@ interface TabType {
 }
 
 const AdminNew: React.FC = () => {
-  // Estado de autenticação
-  const [password, setPassword] = useState('');
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  // Estado de autenticação usando AuthContext
+  const { state: authState, showLoginModal } = useAuth();
   
   // Estado de navegação
   const [activeTab, setActiveTab] = useState<'verbs' | 'words'>('verbs');
@@ -103,26 +104,6 @@ const AdminNew: React.FC = () => {
     { id: 'words', label: 'Palavras para Validação', icon: FileText },
   ];
 
-  // Autenticação
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-
-    try {
-      adminService.setAuthHeaders(password);
-      await adminService.listarVerbs(1, 5);
-      setIsAuthenticated(true);
-      loadVerbs();
-      loadWords();
-    } catch (err: any) {
-      setError('Senha incorreta ou erro de conexão');
-      adminService.clearAuthHeaders();
-    } finally {
-      setLoading(false);
-    }
-  };
-
   // Carregamento de dados
   const loadVerbs = async () => {
     setLoading(true);
@@ -164,23 +145,23 @@ const AdminNew: React.FC = () => {
 
   // Efeitos
   useEffect(() => {
-    if (isAuthenticated && activeTab === 'verbs') {
+    if (authState.isAuthenticated && authState.user?.role === 'admin' && activeTab === 'verbs') {
       loadVerbs();
     }
-  }, [verbPage, verbSearch, isAuthenticated, activeTab]);
+  }, [verbPage, verbSearch, authState.isAuthenticated, authState.user?.role, activeTab]);
 
   useEffect(() => {
-    if (isAuthenticated && activeTab === 'words') {
+    if (authState.isAuthenticated && authState.user?.role === 'admin' && activeTab === 'words') {
       loadWords();
     }
-  }, [wordPage, wordFilters, isAuthenticated, activeTab]);
+  }, [wordPage, wordFilters, authState.isAuthenticated, authState.user?.role, activeTab]);
 
   // Carregar verbo atual do dia quando autenticado
   useEffect(() => {
-    if (isAuthenticated) {
+    if (authState.isAuthenticated && authState.user?.role === 'admin') {
       loadCurrentDayVerb();
     }
-  }, [isAuthenticated]);
+  }, [authState.isAuthenticated, authState.user?.role]);
 
   // Handlers de verbos
   const handleAddVerb = () => {
@@ -252,7 +233,7 @@ const AdminNew: React.FC = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'senha': password
+          'Authorization': `Bearer ${localStorage.getItem('verbo_auth_token')}`
         }
       });
 
@@ -286,7 +267,7 @@ const AdminNew: React.FC = () => {
     try {
       const response = await fetch('/api/admin/verbs/stats', {
         headers: {
-          'senha': password
+          'Authorization': `Bearer ${localStorage.getItem('verbo_auth_token')}`
         }
       });
 
@@ -429,7 +410,7 @@ const AdminNew: React.FC = () => {
   };
 
   // Renderização
-  if (!isAuthenticated) {
+  if (!authState.isAuthenticated || authState.user?.role !== 'admin') {
     return (
       <div className="min-h-screen bg-verbo-dark flex items-center justify-center px-4">
         <div className="max-w-md w-full">
@@ -437,45 +418,35 @@ const AdminNew: React.FC = () => {
             <div className="text-center mb-8">
               <Shield size={48} className="mx-auto text-verbo-primary mb-4" />
               <h2 className="text-2xl font-bold text-white mb-2">Painel Administrativo</h2>
-              <p className="text-gray-400">Acesso restrito - Digite sua senha</p>
+              <p className="text-gray-400">
+                {!authState.isAuthenticated 
+                  ? "Acesso restrito - Faça login como administrador"
+                  : "Acesso negado - Você não tem permissões de administrador"
+                }
+              </p>
             </div>
-            <form onSubmit={handleLogin} className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Senha de Administrador
-                </label>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-verbo-primary focus:border-transparent transition-colors"
-                  placeholder="Digite sua senha..."
-                  required
-                />
-              </div>
-              {error && (
-                <div className="p-4 bg-red-900/50 border border-red-700 text-red-300 rounded-lg text-sm">
-                  {error}
-                </div>
-              )}
+            
+            {!authState.isAuthenticated ? (
               <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-verbo-primary hover:bg-verbo-primary/80 text-white py-3 px-4 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                onClick={showLoginModal}
+                className="w-full bg-verbo-primary hover:bg-verbo-accent text-white font-medium py-3 px-4 rounded-md transition-colors flex items-center justify-center space-x-2"
               >
-                {loading ? (
-                  <>
-                    <RefreshCw size={16} className="animate-spin" />
-                    Verificando...
-                  </>
-                ) : (
-                  <>
-                    <Shield size={16} />
-                    Entrar
-                  </>
-                )}
+                <LogIn size={20} />
+                <span>Fazer Login</span>
               </button>
-            </form>
+            ) : (
+              <div className="text-center">
+                <p className="text-gray-400 mb-4">
+                  Sua conta não possui privilégios administrativos.
+                </p>
+                <button
+                  onClick={() => window.history.back()}
+                  className="bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-4 rounded-md transition-colors"
+                >
+                  Voltar
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
