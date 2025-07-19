@@ -25,7 +25,6 @@ const verbSchema = new Schema<IVerb>(
       unique: true,
       minlength: [2, 'Word must have at least 2 characters'],
       maxlength: [5, 'Word must have at most 5 characters'],
-      index: true,
     },
     active: {
       type: Boolean,
@@ -34,7 +33,6 @@ const verbSchema = new Schema<IVerb>(
     used: {
       type: Boolean,
       default: false,
-      index: true,
     },
   },
   {
@@ -45,7 +43,9 @@ const verbSchema = new Schema<IVerb>(
   }
 );
 
+// Índices para performance (word já tem índice único automático)
 verbSchema.index({ active: 1, used: 1 });
+verbSchema.index({ used: 1 });
 
 verbSchema.pre<IVerb>('save', function (next) {
   const verbSuffixes = ['ar', 'er', 'ir', 'or'];
