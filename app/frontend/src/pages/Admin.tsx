@@ -91,7 +91,13 @@ const AdminNew: React.FC = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [showStatsModal, setShowStatsModal] = useState(false);
-  const [stats, setStats] = useState<{total: number, used: number, available: number} | null>(null);
+  const [stats, setStats] = useState<{
+    totalVerbs: number;
+    activeVerbs: number;
+    usedVerbs: number;
+    inactiveVerbs: number;
+    availableVerbs: number;
+  } | null>(null);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   
   // Estados de erro locais para modais
@@ -265,7 +271,7 @@ const AdminNew: React.FC = () => {
   const handleShowStats = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/admin/verbs/stats', {
+      const response = await fetch('/api/admin/stats', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('verbo_auth_token')}`
         }
@@ -276,6 +282,7 @@ const AdminNew: React.FC = () => {
       }
 
       const data = await response.json();
+      console.log('Dados de estatísticas recebidos:', data);
       setStats(data);
       setShowStatsModal(true);
     } catch (err: any) {
@@ -1196,39 +1203,55 @@ const AdminNew: React.FC = () => {
       )}
 
       {/* Modal de Estatísticas */}
-      {showStatsModal && stats && (
+      {showStatsModal && (
         <SimpleModal onClose={() => setShowStatsModal(false)}>
           <div className="flex items-center gap-2 mb-6">
             <BarChart3 size={20} className="text-verbo-primary" />
             <h3 className="text-lg font-bold text-white">Estatísticas dos Verbos</h3>
           </div>
-          <div className="space-y-6">
-            <div className="grid grid-cols-3 gap-4">
-              <div className="bg-gray-700 border border-gray-600 p-4 rounded-lg text-center">
-                <div className="text-2xl font-bold text-verbo-primary">{stats.total}</div>
-                <div className="text-sm text-gray-400">Total</div>
+          {stats ? (
+            <div className="space-y-6">
+              <div className="grid grid-cols-3 gap-4">
+                <div className="bg-gray-700 border border-gray-600 p-4 rounded-lg text-center">
+                  <div className="text-2xl font-bold text-verbo-primary">{stats.totalVerbs}</div>
+                  <div className="text-sm text-gray-400">Total</div>
+                </div>
+                <div className="bg-gray-700 border border-gray-600 p-4 rounded-lg text-center">
+                  <div className="text-2xl font-bold text-orange-400">{stats.usedVerbs}</div>
+                  <div className="text-sm text-gray-400">Usados</div>
+                </div>
+                <div className="bg-gray-700 border border-gray-600 p-4 rounded-lg text-center">
+                  <div className="text-2xl font-bold text-green-400">{stats.availableVerbs}</div>
+                  <div className="text-sm text-gray-400">Disponíveis</div>
+                </div>
               </div>
-              <div className="bg-gray-700 border border-gray-600 p-4 rounded-lg text-center">
-                <div className="text-2xl font-bold text-orange-400">{stats.used}</div>
-                <div className="text-sm text-gray-400">Usados</div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-gray-700 border border-gray-600 p-4 rounded-lg text-center">
+                  <div className="text-2xl font-bold text-blue-400">{stats.activeVerbs}</div>
+                  <div className="text-sm text-gray-400">Ativos</div>
+                </div>
+                <div className="bg-gray-700 border border-gray-600 p-4 rounded-lg text-center">
+                  <div className="text-2xl font-bold text-red-400">{stats.inactiveVerbs}</div>
+                  <div className="text-sm text-gray-400">Inativos</div>
+                </div>
               </div>
-              <div className="bg-gray-700 border border-gray-600 p-4 rounded-lg text-center">
-                <div className="text-2xl font-bold text-green-400">{stats.available}</div>
-                <div className="text-sm text-gray-400">Disponíveis</div>
+              <div className="bg-gray-700 border border-gray-600 p-4 rounded-lg">
+                <div className="w-full bg-gray-600 rounded-full h-3">
+                  <div 
+                    className="bg-orange-500 h-3 rounded-full transition-all duration-300" 
+                    style={{ width: `${stats.totalVerbs > 0 ? (stats.usedVerbs / stats.totalVerbs) * 100 : 0}%` }}
+                  ></div>
+                </div>
+                <p className="text-sm text-gray-400 mt-3 text-center">
+                  {stats.totalVerbs > 0 ? ((stats.usedVerbs / stats.totalVerbs) * 100).toFixed(1) : 0}% dos verbos já foram usados
+                </p>
               </div>
             </div>
-            <div className="bg-gray-700 border border-gray-600 p-4 rounded-lg">
-              <div className="w-full bg-gray-600 rounded-full h-3">
-                <div 
-                  className="bg-orange-500 h-3 rounded-full transition-all duration-300" 
-                  style={{ width: `${(stats.used / stats.total) * 100}%` }}
-                ></div>
-              </div>
-              <p className="text-sm text-gray-400 mt-3 text-center">
-                {((stats.used / stats.total) * 100).toFixed(1)}% dos verbos já foram usados
-              </p>
+          ) : (
+            <div className="text-center text-gray-400 py-8">
+              Carregando estatísticas...
             </div>
-          </div>
+          )}
         </SimpleModal>
       )}
 
