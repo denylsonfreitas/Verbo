@@ -58,10 +58,13 @@ export function getErrorFromStatus(status: number, defaultMessage: string = ''):
   switch (status) {
     case 400:
       return createAppError(ErrorType.VALIDATION_ERROR, defaultMessage || ERROR_MESSAGES.INVALID_CHARACTERS);
+    case 401:
+      return createAppError(ErrorType.VALIDATION_ERROR, defaultMessage || 'Credenciais inválidas');
     case 404:
       return createAppError(ErrorType.GAME_ERROR, defaultMessage || ERROR_MESSAGES.VERB_NOT_FOUND);
     case 409:
-      return createAppError(ErrorType.GAME_ERROR, defaultMessage || ERROR_MESSAGES.GAME_ALREADY_FINISHED);
+      // Para conflitos, sempre usar a mensagem do servidor se disponível
+      return createAppError(ErrorType.VALIDATION_ERROR, defaultMessage || ERROR_MESSAGES.GAME_ALREADY_FINISHED);
     case 429:
       return createAppError(ErrorType.GAME_ERROR, ERROR_MESSAGES.RATE_LIMIT);
     case 500:

@@ -6,6 +6,11 @@ const API_BASE_URL =
 // Headers customizados
 let customHeaders: Record<string, string> = {};
 
+// Função para obter o token JWT do localStorage
+const getAuthToken = (): string | null => {
+  return localStorage.getItem('verbo_auth_token');
+};
+
 const handleResponse = async (response: Response) => {
   if (!response.ok) {
     let errorData;
@@ -15,8 +20,9 @@ const handleResponse = async (response: Response) => {
       errorData = { message: response.statusText };
     }
     
-    // Usar o sistema de erros melhorado
-    const appError = getErrorFromStatus(response.status, errorData.message || errorData.error);
+    // Priorizar a mensagem específica do servidor
+    const errorMessage = errorData.message || errorData.error || response.statusText;
+    const appError = getErrorFromStatus(response.status, errorMessage);
     throw appError;
   }
   
@@ -38,12 +44,24 @@ export const api = {
     customHeaders = {};
   },
 
+  // Função para obter headers com token JWT automático
+  getHeaders(): Record<string, string> {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      ...customHeaders,
+    };
+    
+    const token = getAuthToken();
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+    
+    return headers;
+  },
+
   async get(endpoint: string) {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-      headers: {
-        'Content-Type': 'application/json',
-        ...customHeaders,
-      },
+      headers: this.getHeaders(),
     });
     return handleResponse(response);
   },
@@ -51,10 +69,7 @@ export const api = {
   async post(endpoint: string, data: any) {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...customHeaders,
-      },
+      headers: this.getHeaders(),
       body: JSON.stringify(data),
     });
     return handleResponse(response);
@@ -63,10 +78,7 @@ export const api = {
   async put(endpoint: string, data: any) {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        ...customHeaders,
-      },
+      headers: this.getHeaders(),
       body: JSON.stringify(data),
     });
     return handleResponse(response);
@@ -75,10 +87,7 @@ export const api = {
   async delete(endpoint: string) {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-        ...customHeaders,
-      },
+      headers: this.getHeaders(),
     });
     return handleResponse(response);
   },

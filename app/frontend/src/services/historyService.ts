@@ -1,13 +1,20 @@
 import { GuessFeedback } from '../contexts/GameContext';
 
 export interface WordHistoryEntry {
-  date: string; // YYYY-MM-DD
   word: string;
-  guesses: GuessFeedback[];
-  completed: boolean;
+  verbId: string;
+  date: string; // YYYY-MM-DD
   won: boolean;
   attempts: number;
-  timestamp: string;
+  guesses: Array<{
+    letters: Array<{
+      letter: string;
+      status: 'correct' | 'wrong-position' | 'incorrect';
+    }>;
+  }>;
+  hardMode: boolean;
+  completed?: boolean; // Campo adicional para compatibilidade local
+  timestamp?: string; // Campo adicional para compatibilidade local
 }
 
 const HISTORY_KEY = 'verbo_word_history';
@@ -162,7 +169,7 @@ export const historyService = {
   // Verificar se jogou em uma data específica
   hasPlayedOnDate(date: string): boolean {
     const entry = this.getEntryByDate(date);
-    return entry !== null && entry.completed;
+    return entry !== null && (entry.completed === true || entry.won !== undefined);
   },
 };
 
