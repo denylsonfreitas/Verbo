@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowBigLeft, CornerDownLeft } from 'lucide-react';
+import { Delete, Send } from 'lucide-react';
 
 interface LetterFeedback {
   letter: string;
@@ -23,7 +23,7 @@ const Keyboard: React.FC<KeyboardProps> = ({ onKeyPress, guesses = [], disabled 
   const keys = [
     ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'],
     ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l'],
-    ['Enter', 'z', 'x', 'c', 'v', 'b', 'n', 'm', 'Backspace'],
+    ['Backspace', 'z', 'x', 'c', 'v', 'b', 'n', 'm', 'Enter'],
   ];
 
   // Detectar quando uma nova tentativa é adicionada para animar as teclas afetadas
@@ -129,7 +129,7 @@ const Keyboard: React.FC<KeyboardProps> = ({ onKeyPress, guesses = [], disabled 
     if (key === 'Backspace') {
       return (
         <div className="flex flex-col items-center justify-center">
-          <ArrowBigLeft size={14} className="sm:w-4 sm:h-4 md:w-5 md:h-5" />
+          <Delete size={14} className="sm:w-4 sm:h-4 md:w-5 md:h-5" />
         </div>
       );
     }
@@ -137,7 +137,7 @@ const Keyboard: React.FC<KeyboardProps> = ({ onKeyPress, guesses = [], disabled 
     if (key === 'Enter') {
       return (
         <div className="flex flex-col items-center justify-center">
-          <CornerDownLeft size={14} className="sm:w-4 sm:h-4 md:w-5 md:h-5" />
+          <Send size={14} className="sm:w-4 sm:h-4 md:w-5 md:h-5" />
         </div>
       );
     }
@@ -152,7 +152,7 @@ const Keyboard: React.FC<KeyboardProps> = ({ onKeyPress, guesses = [], disabled 
   };
 
   return (
-    <div className="flex flex-col gap-0.5 sm:gap-1 md:gap-2 max-w-lg mx-auto w-full px-1 sm:px-2">
+    <div className="flex flex-col gap-0.5 sm:gap-1 md:gap-2 max-w-md sm:max-w-lg mx-auto w-full px-1 sm:px-2">
       {keys.map((row, rowIndex) => (
         <div key={rowIndex} className="flex gap-0.5 sm:gap-1 justify-center">
           {row.map(key => {
