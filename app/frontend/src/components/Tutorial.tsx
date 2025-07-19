@@ -31,7 +31,7 @@ const Tutorial: React.FC<TutorialProps> = ({ isOpen, onClose }) => {
       content: (
         <div className="space-y-4">
           <p className="text-gray-300">
-            Digite um verbo e pressione ENTER. As cores dos tiles te darão
+            Digite um verbo e pressione ENTER. As cores das entradas te darão
             dicas:
           </p>
 
