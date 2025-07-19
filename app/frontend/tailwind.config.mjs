@@ -28,7 +28,8 @@ export default {
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
-        mono: ['JetBrains Mono', 'monospace']
+        mono: ['JetBrains Mono', 'monospace'],
+        'major-mono': ['Major Mono Display', 'monospace']
       },
       animation: {
         'bounce-in': 'bounceIn 0.6s ease-out',
