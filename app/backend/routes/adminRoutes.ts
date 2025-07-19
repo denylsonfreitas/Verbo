@@ -1,27 +1,9 @@
 import express, { Request, Response, NextFunction } from 'express';
 import Verb from '../models/Verb';
 import * as Joi from 'joi';
+import { authenticateJWT, requireAdmin } from '../middleware/auth';
 
 const router = express.Router();
-
-// Middleware de autenticação simples (em produção, usar JWT)
-const autenticarAdmin = (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): void => {
-  const { senha } = req.headers;
-
-  if (senha !== process.env.ADMIN_PASSWORD) {
-    res.status(401).json({
-      error: 'Não autorizado',
-      message: 'Senha de administrador incorreta',
-    });
-    return;
-  }
-
-  next();
-};
 
 // Schema de validação simplificado para verbos (apenas word obrigatório)
 const verbSchema = Joi.object({
@@ -53,7 +35,8 @@ const verbUpdateSchema = Joi.object({
 // POST /api/admin/verbs - Create new verb
 router.post(
   '/verbs',
-  autenticarAdmin,
+  authenticateJWT,
+  requireAdmin,
   async (req: Request, res: Response): Promise<void> => {
     try {
       const { error, value } = verbSchema.validate(req.body);
@@ -76,35 +59,30 @@ router.post(
         return;
       }
 
-      const verb = new Verb(value);
-      await verb.save();
+      // Criar novo verbo
+      const newVerb = new Verb({
+        word: value.word.toLowerCase(),
+        active: value.active,
+        used: value.used,
+      });
+
+      await newVerb.save();
 
       res.status(201).json({
         message: 'Verbo cadastrado com sucesso',
         verb: {
-          id: verb._id,
-          word: verb.word,
-          active: verb.active,
-          used: verb.used,
+          id: newVerb._id,
+          word: newVerb.word,
+          active: newVerb.active,
+          used: newVerb.used,
         },
       });
-      return;
-    } catch (error: any) {
+    } catch (error) {
       console.error('Erro ao cadastrar verbo:', error);
-
-      if (error.code === 11000) {
-        res.status(409).json({
-          error: 'Verbo duplicado',
-          message: 'Este verbo já está cadastrado',
-        });
-        return;
-      }
-
       res.status(500).json({
         error: 'Erro interno do servidor',
-        message: 'Não foi possível cadastrar o verbo',
+        message: 'Erro ao processar solicitação',
       });
-      return;
     }
   }
 );
@@ -112,7 +90,8 @@ router.post(
 // GET /api/admin/verbs - List verbs
 router.get(
   '/verbs',
-  autenticarAdmin,
+  authenticateJWT,
+  requireAdmin,
   async (req: Request, res: Response): Promise<void> => {
     try {
       const { page = 1, limit = 20, active, search } = req.query;
@@ -148,7 +127,7 @@ router.get(
       console.error('Erro ao listar verbos:', error);
       res.status(500).json({
         error: 'Erro interno do servidor',
-        message: 'Não foi possível listar os verbos',
+        message: 'Erro ao processar solicitação',
       });
     }
   }
@@ -157,10 +136,12 @@ router.get(
 // PUT /api/admin/verbs/:id - Update verb
 router.put(
   '/verbs/:id',
-  autenticarAdmin,
+  authenticateJWT,
+  requireAdmin,
   async (req: Request, res: Response): Promise<void> => {
     try {
       const { id } = req.params;
+
       const { error, value } = verbUpdateSchema.validate(req.body);
 
       if (error) {
@@ -171,16 +152,32 @@ router.put(
         return;
       }
 
-      const verb = await Verb.findByIdAndUpdate(
-        id,
-        { ...value, updatedAt: new Date() },
-        { new: true, runValidators: true }
-      );
+      // Se está atualizando a palavra, verificar se já existe outra com o mesmo valor
+      if (value.word) {
+        const existingVerb = await Verb.findOne({
+          word: value.word,
+          _id: { $ne: id },
+        });
+        if (existingVerb) {
+          res.status(409).json({
+            error: 'Verbo já cadastrado',
+            message: 'Já existe um verbo com esta palavra',
+          });
+          return;
+        }
+        value.word = value.word.toLowerCase();
+      }
 
-      if (!verb) {
+      // Atualizar verbo
+      const updatedVerb = await Verb.findByIdAndUpdate(id, value, {
+        new: true,
+        runValidators: true,
+      });
+
+      if (!updatedVerb) {
         res.status(404).json({
           error: 'Verbo não encontrado',
-          message: 'O verbo especificado não foi encontrado',
+          message: 'Verbo não encontrado no sistema',
         });
         return;
       }
@@ -188,98 +185,119 @@ router.put(
       res.json({
         message: 'Verbo atualizado com sucesso',
         verb: {
-          id: verb._id,
-          word: verb.word,
-          active: verb.active,
+          id: updatedVerb._id,
+          word: updatedVerb.word,
+          active: updatedVerb.active,
+          used: updatedVerb.used,
         },
       });
     } catch (error) {
       console.error('Erro ao atualizar verbo:', error);
       res.status(500).json({
         error: 'Erro interno do servidor',
-        message: 'Não foi possível atualizar o verbo',
+        message: 'Erro ao processar solicitação',
       });
     }
   }
 );
 
-// DELETE /api/admin/verbs/:id - Deactivate verb
+// DELETE /api/admin/verbs/:id - Delete verb
 router.delete(
   '/verbs/:id',
-  autenticarAdmin,
+  authenticateJWT,
+  requireAdmin,
   async (req: Request, res: Response): Promise<void> => {
     try {
       const { id } = req.params;
 
-      const verb = await Verb.findByIdAndUpdate(
-        id,
-        { active: false, updatedAt: new Date() },
-        { new: true }
-      );
+      const deletedVerb = await Verb.findByIdAndDelete(id);
 
-      if (!verb) {
+      if (!deletedVerb) {
         res.status(404).json({
           error: 'Verbo não encontrado',
-          message: 'O verbo especificado não foi encontrado',
+          message: 'Verbo não encontrado no sistema',
         });
         return;
       }
 
       res.json({
-        message: 'Verbo desativado com sucesso',
+        message: 'Verbo removido com sucesso',
+      });
+    } catch (error) {
+      console.error('Erro ao remover verbo:', error);
+      res.status(500).json({
+        error: 'Erro interno do servidor',
+        message: 'Erro ao processar solicitação',
+      });
+    }
+  }
+);
+
+// PUT /api/admin/verbs/:id/activate - Activate verb
+router.put(
+  '/verbs/:id/activate',
+  authenticateJWT,
+  requireAdmin,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
+
+      const updatedVerb = await Verb.findByIdAndUpdate(
+        id,
+        { active: true },
+        { new: true }
+      );
+
+      if (!updatedVerb) {
+        res.status(404).json({
+          error: 'Verbo não encontrado',
+          message: 'Verbo não encontrado no sistema',
+        });
+        return;
+      }
+
+      res.json({
+        message: 'Verbo ativado com sucesso',
         verb: {
-          id: verb._id,
-          word: verb.word,
-          active: verb.active,
-          used: verb.used,
+          id: updatedVerb._id,
+          word: updatedVerb.word,
+          active: updatedVerb.active,
+          used: updatedVerb.used,
         },
       });
     } catch (error) {
-      console.error('Erro ao atualizar verbo:', error);
+      console.error('Erro ao ativar verbo:', error);
       res.status(500).json({
         error: 'Erro interno do servidor',
-        message: 'Não foi possível atualizar o verbo',
+        message: 'Erro ao processar solicitação',
       });
     }
   }
 );
 
-// POST /api/admin/verbs/reset - Reset all verbs (mark as unused)
-router.post(
-  '/verbs/reset',
-  autenticarAdmin,
+// GET /api/admin/stats - Admin statistics
+router.get(
+  '/stats',
+  authenticateJWT,
+  requireAdmin,
   async (req: Request, res: Response): Promise<void> => {
     try {
-      await Verb.resetAllVerbs();
-      const stats = await Verb.getUsageStats();
+      const totalVerbs = await Verb.countDocuments();
+      const activeVerbs = await Verb.countDocuments({ active: true });
+      const usedVerbs = await Verb.countDocuments({ used: true });
 
       res.json({
-        message: 'Todos os verbos foram resetados com sucesso',
-        stats: stats,
+        totalVerbs,
+        activeVerbs,
+        usedVerbs,
+        inactiveVerbs: totalVerbs - activeVerbs,
+        availableVerbs: activeVerbs - usedVerbs,
       });
     } catch (error) {
-      console.error('Erro ao resetar verbos:', error);
+      console.error('Erro ao obter estatísticas:', error);
       res.status(500).json({
         error: 'Erro interno do servidor',
-        message: 'Não foi possível resetar os verbos',
-      });
-    }
-  }
-);
-
-// GET /api/admin/verbs/stats - Get verb usage statistics
-router.get(
-  '/verbs/stats',
-  autenticarAdmin,
-  async (req: Request, res: Response): Promise<void> => {
-    try {
-      const stats = await Verb.getUsageStats();
-      res.json(stats);
-    } catch (error) {
-      console.error('Erro ao buscar estatísticas:', error);
-      res.status(500).json({
-        error: 'Erro interno do servidor',
-        message: 'Não foi possível buscar as estatísticas',
+        message: 'Erro ao processar solicitação',
       });
     }
   }
