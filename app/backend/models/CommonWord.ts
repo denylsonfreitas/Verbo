@@ -38,10 +38,10 @@ const commonWordSchema = new Schema<ICommonWord>(
   }
 );
 
-// Índices para performance
-commonWordSchema.index({ word: 1 });
+// Índices para performance (word já tem índice único automático)
 commonWordSchema.index({ active: 1 });
 commonWordSchema.index({ type: 1 });
+commonWordSchema.index({ type: 1, active: 1 });
 
 // Método estático para verificar se uma palavra é válida
 commonWordSchema.statics.isValidWord = function (word: string) {
