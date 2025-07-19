@@ -13,6 +13,7 @@ import {
   getLocalDateString,
 } from '../services/historyService';
 import { getErrorFromStatus, validateWordInput } from '../utils/errorUtils';
+import { useAuth } from './AuthContext';
 
 export interface LetterFeedback {
   letter: string;
@@ -435,6 +436,7 @@ interface GameContextType {
   setSelectedPosition: (position: number) => void;
   insertLetterAtPosition: (letter: string, position: number) => void;
   toggleHardMode: () => void;
+  hideError: () => void;
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
@@ -443,6 +445,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
   const [gameState, dispatch] = useReducer(gameReducer, initialState);
+  const { state: authState, syncData } = useAuth();
 
   // Salvar estado automaticamente quando houver mudanças importantes
   useEffect(() => {
@@ -479,17 +482,31 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({
         // Salvar no histórico
         const today = getLocalDateString();
         const historyEntry: WordHistoryEntry = {
-          date: today,
           word: gameState.wordOfDay,
-          guesses: gameState.guesses,
-          completed: true,
+          verbId: gameState.verbId,
+          date: today,
           won: gameState.win,
           attempts: gameState.win
             ? gameState.guesses.length
             : gameState.maxGuesses,
-          timestamp: new Date().toISOString(),
+          guesses: gameState.guesses,
+          hardMode: gameState.hardMode,
+          completed: true, // Campo adicional para compatibilidade local
+          timestamp: new Date().toISOString(), // Campo adicional para compatibilidade local
         };
         historyService.addEntry(historyEntry);
+
+        // Sincronizar com o servidor se o usuário estiver autenticado
+        if (authState.isAuthenticated) {
+          try {
+            const localStats = statsService.loadStats();
+            const localHistory = historyService.loadHistory();
+            await syncData(localStats, localHistory);
+          } catch (error) {
+            console.error('Erro ao sincronizar dados:', error);
+            // Continua normalmente mesmo se a sincronização falhar
+          }
+        }
 
         // Marcar como registrado para evitar duplicatas
         dispatch({ type: 'MARK_STATS_RECORDED' });
@@ -506,6 +523,8 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({
     gameState.statsRecorded,
     gameState.maxGuesses,
     gameState.verbId,
+    authState.isAuthenticated,
+    syncData,
   ]);
 
   useEffect(() => {
@@ -650,6 +669,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({
       payload: { letter, position },
     });
   const toggleHardMode = () => dispatch({ type: 'TOGGLE_HARD_MODE' });
+  const hideError = () => dispatch({ type: 'HIDE_ERROR' });
 
   const value = {
     gameState,
@@ -660,6 +680,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({
     setSelectedPosition,
     insertLetterAtPosition,
     toggleHardMode,
+    hideError,
   };
 
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>;
