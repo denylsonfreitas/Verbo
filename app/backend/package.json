@@ -4,7 +4,7 @@
   "description": "Backend API para o jogo Verbo",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
+    "start": "node dist/server.js",
     "dev": "ts-node-dev --respawn --transpile-only server.ts",
     "test": "jest",
     "seed": "ts-node scripts/seed.ts",
