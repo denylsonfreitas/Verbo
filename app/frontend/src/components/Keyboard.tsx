@@ -95,7 +95,7 @@ const Keyboard: React.FC<KeyboardProps> = ({ onKeyPress, guesses = [], disabled 
     // Botões especiais (Enter e Backspace)
     if (key === 'Enter' || key === 'Backspace') {
       const hoverClasses = disabled ? '' : 'hover:bg-blue-500 focus:bg-blue-700';
-      return `px-2 sm:px-4 md:px-6 py-3 sm:py-4 md:py-5 bg-blue-600 text-white font-bold rounded-lg min-w-[48px] sm:min-w-[64px] md:min-w-[80px] text-base sm:text-lg md:text-xl ${hoverClasses} focus:outline-none focus:ring-2 focus:ring-blue-300 ${baseTransition} ${pressAnimation} ${disabledClasses} transform select-none`;
+      return `px-4 sm:px-4 md:px-6 py-4 sm:py-4 md:py-5 bg-blue-600 text-white font-bold rounded-lg min-w-[64px] sm:min-w-[64px] md:min-w-[80px] text-lg sm:text-lg md:text-xl ${hoverClasses} focus:outline-none focus:ring-2 focus:ring-blue-300 ${baseTransition} ${pressAnimation} ${disabledClasses} transform select-none`;
     }
 
     // Obtém o status da letra para aplicar a cor correspondente
@@ -122,7 +122,7 @@ const Keyboard: React.FC<KeyboardProps> = ({ onKeyPress, guesses = [], disabled 
         break;
     }
 
-    return `px-1 sm:px-2 md:px-3 py-1.5 sm:py-2.5 md:py-4 ${statusClasses} ${hoverClasses} border-2 rounded-lg font-semibold text-xs sm:text-sm uppercase min-w-[26px] sm:min-w-[32px] md:min-w-[40px] focus:outline-none focus:ring-2 focus:ring-white/30 ${baseTransition} ${pressAnimation} ${updateAnimation} ${disabledClasses} transform select-none`;
+    return `px-2 py-3 sm:px-2 md:px-3 sm:py-2.5 md:py-4 ${statusClasses} ${hoverClasses} border-2 rounded-lg font-semibold text-base sm:text-sm uppercase min-w-0 flex-1 max-w-[48px] sm:max-w-[40px] md:max-w-[48px] focus:outline-none focus:ring-2 focus:ring-white/30 ${baseTransition} ${pressAnimation} ${updateAnimation} ${disabledClasses} transform select-none`;
   };
 
   const renderKeyContent = (key: string) => {
@@ -152,9 +152,9 @@ const Keyboard: React.FC<KeyboardProps> = ({ onKeyPress, guesses = [], disabled 
   };
 
   return (
-    <div className="flex flex-col gap-0.5 sm:gap-1 md:gap-2 max-w-md sm:max-w-lg mx-auto w-full px-1 sm:px-2">
+    <div className="flex flex-col gap-0.5 sm:gap-1 md:gap-2 w-full max-w-full mx-auto px-1 sm:px-2">
       {keys.map((row, rowIndex) => (
-        <div key={rowIndex} className="flex gap-0.5 sm:gap-1 justify-center">
+        <div key={rowIndex} className="flex gap-0.5 sm:gap-1 justify-center w-full">
           {row.map(key => {
             return (
               <button

@@ -155,7 +155,7 @@ const Game: React.FC = () => {
 
           {/* Teclado e legenda - sempre centralizados */}
           {!gameState.gameOver && (
-            <div className="flex-shrink-0 w-full flex flex-col items-center space-y-1 sm:space-y-2">
+            <div className="flex-shrink-0 w-full flex flex-col items-center space-y-3 sm:space-y-4">
               <Keyboard 
                 onKeyPress={handleKeyPress} 
                 guesses={gameState.guesses} 
