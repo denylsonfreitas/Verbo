@@ -1,6 +1,8 @@
 import { historyService } from './historyService';
+import { v4 as uuidv4 } from 'uuid';
 
 export interface GameStats {
+  statId: string; // Identificador único da estatística
   gamesPlayed: number;
   gamesWon: number;
   currentStreak: number;
@@ -40,6 +42,7 @@ export const statsService = {
 
     // Retornar estatísticas padrão se não existirem
     return {
+      statId: '', // Inicializa vazio, será gerado ao registrar vitória
       gamesPlayed: 0,
       gamesWon: 0,
       currentStreak: 0,
@@ -75,6 +78,9 @@ export const statsService = {
     if (stats.lastPlayedDate === today) {
       return;
     }
+
+    // Gera um novo statId único para cada vitória do dia
+    stats.statId = uuidv4();
 
     stats.gamesPlayed += 1;
     stats.gamesWon += 1;
@@ -160,6 +166,7 @@ export const statsService = {
   // Resetar todas as estatísticas
   resetStats(): void {
     const emptyStats: GameStats = {
+      statId: '', // Inicializa vazio, será gerado ao registrar vitória
       gamesPlayed: 0,
       gamesWon: 0,
       currentStreak: 0,

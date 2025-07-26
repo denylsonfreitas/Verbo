@@ -14,6 +14,7 @@ export interface User {
 }
 
 export interface GameStats {
+  statId: string; // Identificador único da estatística
   gamesPlayed: number;
   gamesWon: number;
   currentStreak: number;
@@ -210,12 +211,26 @@ class AuthService {
   async syncData(stats: GameStats, gameHistory: WordHistoryEntry[]): Promise<User> {
     const response = await api.post('/api/auth/sync', { stats, gameHistory });
     const user: User = response.user;
-    
+
+    // Garante que todos os campos obrigatórios de stats estão presentes
+    if (user && user.stats) {
+      user.stats = {
+        statId: stats?.statId || user.stats.statId || '',
+        gamesPlayed: user.stats.gamesPlayed ?? stats?.gamesPlayed ?? 0,
+        gamesWon: user.stats.gamesWon ?? stats?.gamesWon ?? 0,
+        currentStreak: user.stats.currentStreak ?? stats?.currentStreak ?? 0,
+        maxStreak: user.stats.maxStreak ?? stats?.maxStreak ?? 0,
+        guessDistribution: user.stats.guessDistribution ?? stats?.guessDistribution ?? { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 },
+        lastPlayedDate: user.stats.lastPlayedDate ?? stats?.lastPlayedDate ?? null,
+        lastWonDate: user.stats.lastWonDate ?? stats?.lastWonDate ?? null
+      };
+    }
+
     // Atualizar usuário local
     if (this.token) {
       this.saveToStorage(this.token, user);
     }
-    
+
     return user;
   }
 

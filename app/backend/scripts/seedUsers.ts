@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import * as dotenv from 'dotenv';
 import User from '../models/User';
+import { v4 as uuidv4 } from 'uuid';
 import { AuditLogger } from '../models/AuditLog';
 import connectDB from '../config/database';
 
@@ -27,11 +28,23 @@ const createInitialAdmin = async () => {
     const adminData = {
       username: 'admin',
       email: 'admin@verbo.com',
-      password: 'admin123456' // Deve ser alterado após o primeiro login
+      password: 'admin123456', // Deve ser alterado após o primeiro login
+      role: 'admin',
+      stats: {
+        statId: uuidv4(),
+        gamesPlayed: 0,
+        gamesWon: 0,
+        currentStreak: 0,
+        maxStreak: 0,
+        guessDistribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 },
+        lastPlayedDate: null,
+        lastWonDate: null
+      }
     };
 
     console.log('👤 Criando administrador inicial...');
-    const admin = await User.createAdmin(adminData.username, adminData.email, adminData.password);
+    const admin = new User(adminData);
+    await admin.save();
 
     console.log('✅ Administrador criado com sucesso!');
     console.log(`📧 Username: ${admin.username}`);
@@ -78,11 +91,22 @@ const createTestPlayer = async () => {
     const playerData = {
       username: 'teste',
       email: 'teste@verbo.com',
-      password: 'teste123'
+      password: 'teste123',
+      stats: {
+        statId: uuidv4(),
+        gamesPlayed: 0,
+        gamesWon: 0,
+        currentStreak: 0,
+        maxStreak: 0,
+        guessDistribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 },
+        lastPlayedDate: null,
+        lastWonDate: null
+      }
     };
 
     console.log('👤 Criando jogador de teste...');
-    const player = await User.createPlayer(playerData.username, playerData.password, playerData.email);
+    const player = new User(playerData);
+    await player.save();
 
     console.log('✅ Jogador de teste criado com sucesso!');
     console.log(`👤 Username: ${player.username}`);

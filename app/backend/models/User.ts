@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 
 // Interface para as estatísticas do jogo
 export interface IGameStats {
+  statId: string; // Identificador único da estatística
   gamesPlayed: number;
   gamesWon: number;
   currentStreak: number;
@@ -60,6 +61,7 @@ interface IUserModel extends Model<IUser> {
 
 // Schema das estatísticas do jogo
 const gameStatsSchema = new Schema<IGameStats>({
+  statId: { type: String, required: true }, // Identificador único da estatística
   gamesPlayed: { type: Number, default: 0 },
   gamesWon: { type: Number, default: 0 },
   currentStreak: { type: Number, default: 0 },

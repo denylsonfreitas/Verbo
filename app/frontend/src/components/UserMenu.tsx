@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import Toast from './Toast';
 import { 
   User, 
   LogOut, 
@@ -12,6 +13,7 @@ import { useAuth } from '../contexts/AuthContext';
 
 const UserMenu: React.FC = () => {
   const { state, logout, syncData } = useAuth();
+  const [showError, setShowError] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -35,20 +37,18 @@ const UserMenu: React.FC = () => {
 
   const handleSync = async () => {
     setIsSyncing(true);
-    
     try {
       // Obter dados locais para sincronizar
       const localStatsStr = localStorage.getItem('verbo_stats');
       const localHistoryStr = localStorage.getItem('verbo_history');
-      
       const localStats = localStatsStr ? JSON.parse(localStatsStr) : null;
       const localHistory = localHistoryStr ? JSON.parse(localHistoryStr) : [];
-      
-      await syncData(localStats, localHistory);
-      
-      // Mostrar feedback de sucesso (você pode adicionar um toast aqui)
-      console.log('Dados sincronizados com sucesso!');
+      const result = await syncData(localStats, localHistory);
+      if (!result) {
+        setShowError(true);
+      }
     } catch (error) {
+      setShowError(true);
       console.error('Erro ao sincronizar:', error);
     } finally {
       setIsSyncing(false);
@@ -68,6 +68,14 @@ const UserMenu: React.FC = () => {
 
   return (
     <div className="relative" ref={menuRef}>
+      {/* Toast de erro de sincronização */}
+      <Toast
+        message={state.error || 'Erro ao sincronizar dados'}
+        type="error"
+        show={showError && !!state.error}
+        onClose={() => setShowError(false)}
+        duration={4000}
+      />
       {/* User Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
@@ -153,16 +161,6 @@ const UserMenu: React.FC = () => {
             </button>
 
             {/* My Account */}
-            <button
-              onClick={() => {
-                setIsOpen(false);
-                window.location.href = '/account';
-              }}
-              className="w-full px-4 py-2 text-left text-gray-300 hover:bg-gray-700 hover:text-white transition-colors flex items-center gap-3"
-            >
-              <UserCog size={16} />
-              <span>Minha Conta</span>
-            </button>
 
             {/* Admin Panel (se for admin) */}
             {user.role === 'admin' && (

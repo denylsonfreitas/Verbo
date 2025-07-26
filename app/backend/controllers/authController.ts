@@ -7,6 +7,7 @@ import { generateToken } from '../middleware/auth';
 import { AuditLogger } from '../models/AuditLog';
 import { emailService } from '../services/emailService';
 import bcrypt from 'bcryptjs';
+import { v4 as uuidv4 } from 'uuid';
 
 // Interface para dados de registro
 interface RegisterData {
@@ -184,8 +185,27 @@ export class AuthController {
         }
       }
 
-      // Criar novo usuário
-      const user = await User.createPlayer(username, password, email);
+      // Criar novo usuário com stats já preenchido
+      const initialStats: IGameStats = {
+        statId: uuidv4(),
+        gamesPlayed: 0,
+        gamesWon: 0,
+        currentStreak: 0,
+        maxStreak: 0,
+        guessDistribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 },
+        lastPlayedDate: null,
+        lastWonDate: null
+      };
+      const user = new User({
+        username,
+        password,
+        email,
+        role: 'player',
+        stats: initialStats,
+        gameHistory: [],
+        isActive: true
+      });
+      await user.save();
       const token = generateToken((user._id as any).toString(), user.role);
 
       // Log do registro
@@ -354,10 +374,20 @@ export class AuthController {
       const { stats }: { stats: IGameStats } = req.body;
 
       // Validar estrutura das estatísticas
-      if (!stats || typeof stats !== 'object') {
+      if (!stats || typeof stats !== 'object' || !stats.statId) {
         res.status(400).json({
           error: 'Dados inválidos',
-          message: 'Estrutura de estatísticas inválida'
+          message: 'Estrutura de estatísticas inválida ou statId ausente'
+        });
+        return;
+      }
+
+      // Verificar se o statId já está vinculado a outro usuário
+      const existingUser = await User.findOne({ 'stats.statId': stats.statId }) as IUser | null;
+      if (existingUser && existingUser._id && existingUser._id.toString() !== (req.user._id as any).toString()) {
+        res.status(409).json({
+          error: 'Estatística já sincronizada',
+          message: 'Esta estatística já foi vinculada a outra conta. Não é possível sincronizar novamente.'
         });
         return;
       }
@@ -426,6 +456,22 @@ export class AuthController {
 
   // Sincronizar dados locais com servidor
   static async syncData(req: Request, res: Response): Promise<void> {
+      const { stats, gameHistory }: { 
+        stats: IGameStats; 
+        gameHistory: IWordHistoryEntry[] 
+      } = req.body;
+
+      // Verificar se o statId já está vinculado a outro usuário
+      if (stats && stats.statId && req.user) {
+        const existingUser = await User.findOne({ 'stats.statId': stats.statId });
+        if (existingUser && String(existingUser._id) !== String((req.user as IUser)._id)) {
+          res.status(409).json({
+            error: 'Estatística já sincronizada',
+            message: 'Esta estatística já foi vinculada a outra conta. Não é possível sincronizar novamente.'
+          });
+          return;
+        }
+      }
     try {
       if (!req.user) {
         res.status(401).json({
@@ -444,6 +490,7 @@ export class AuthController {
       if (stats) {
         const currentStats = req.user.stats;
         const mergedStats: IGameStats = {
+          statId: stats.statId || currentStats.statId || '',
           gamesPlayed: Math.max(currentStats.gamesPlayed, stats.gamesPlayed),
           gamesWon: Math.max(currentStats.gamesWon, stats.gamesWon),
           currentStreak: Math.max(currentStats.currentStreak, stats.currentStreak),
@@ -459,7 +506,6 @@ export class AuthController {
           lastPlayedDate: stats.lastPlayedDate || currentStats.lastPlayedDate,
           lastWonDate: stats.lastWonDate || currentStats.lastWonDate
         };
-        
         req.user.stats = mergedStats;
       }
 

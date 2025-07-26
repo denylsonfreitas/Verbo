@@ -300,7 +300,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     dispatch({ type: 'SYNC_START' });
 
     try {
-      await authService.syncData(stats, gameHistory);
+      const updatedUser = await authService.syncData(stats, gameHistory);
+      // Garante que todos os campos obrigatórios de GameStats estão presentes
+      if (updatedUser && updatedUser.stats) {
+        updatedUser.stats = {
+          statId: updatedUser.stats.statId ?? stats?.statId ?? '',
+          gamesPlayed: updatedUser.stats.gamesPlayed ?? stats?.gamesPlayed ?? 0,
+          gamesWon: updatedUser.stats.gamesWon ?? stats?.gamesWon ?? 0,
+          currentStreak: updatedUser.stats.currentStreak ?? stats?.currentStreak ?? 0,
+          maxStreak: updatedUser.stats.maxStreak ?? stats?.maxStreak ?? 0,
+          guessDistribution: updatedUser.stats.guessDistribution ?? stats?.guessDistribution ?? { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 },
+          lastPlayedDate: updatedUser.stats.lastPlayedDate ?? stats?.lastPlayedDate ?? null,
+          lastWonDate: updatedUser.stats.lastWonDate ?? stats?.lastWonDate ?? null
+        };
+      }
+      dispatch({ type: 'UPDATE_USER', payload: updatedUser });
       dispatch({ type: 'SYNC_SUCCESS' });
       return true;
     } catch (error: any) {
@@ -365,8 +379,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         },
         lastPlayedDate: null,
         lastWonDate: null,
-        averageGuesses: 0,
-        winPercentage: 0
+        statId: ''
       },
       gameHistory: []
     };
