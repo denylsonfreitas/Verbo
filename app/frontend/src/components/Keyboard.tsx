@@ -95,7 +95,7 @@ const Keyboard: React.FC<KeyboardProps> = ({ onKeyPress, guesses = [], disabled 
     // Botões especiais (Enter e Backspace)
     if (key === 'Enter' || key === 'Backspace') {
       const hoverClasses = disabled ? '' : 'hover:bg-blue-500 focus:bg-blue-700';
-      return `px-1 sm:px-2 md:px-4 py-1.5 sm:py-2.5 md:py-4 bg-blue-600 text-white font-bold rounded-lg min-w-[36px] sm:min-w-[50px] md:min-w-[60px] text-xs sm:text-sm ${hoverClasses} focus:outline-none focus:ring-2 focus:ring-blue-300 ${baseTransition} ${pressAnimation} ${disabledClasses} transform select-none`;
+      return `px-2 sm:px-4 md:px-6 py-3 sm:py-4 md:py-5 bg-blue-600 text-white font-bold rounded-lg min-w-[48px] sm:min-w-[64px] md:min-w-[80px] text-base sm:text-lg md:text-xl ${hoverClasses} focus:outline-none focus:ring-2 focus:ring-blue-300 ${baseTransition} ${pressAnimation} ${disabledClasses} transform select-none`;
     }
 
     // Obtém o status da letra para aplicar a cor correspondente

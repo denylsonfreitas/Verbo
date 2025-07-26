@@ -53,7 +53,7 @@ const LetterTile: React.FC<LetterTileProps> = ({
 
   const getTileClasses = () => {
     const baseClasses =
-      'w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 border-2 flex items-center justify-center text-sm sm:text-lg md:text-xl font-bold uppercase transition-colors duration-300 cursor-pointer rounded-sm';
+      'w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 border-2 flex items-center justify-center text-base sm:text-xl md:text-2xl font-bold uppercase transition-colors duration-300 cursor-pointer rounded-sm';
 
     let animationClasses = '';
 

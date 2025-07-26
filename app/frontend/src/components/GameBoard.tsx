@@ -62,15 +62,7 @@ const GameBoard: React.FC = () => {
               key={rowIndex}
               className={`flex gap-1 sm:gap-2 justify-center relative ${showError ? 'shake-animation' : ''}`}
             >
-              {loading.validate && (
-                <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 z-10">
-                  <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600 bg-white px-2 py-1 rounded shadow-lg">
-                    <div className="animate-spin h-3 w-3 border-2 border-blue-600 border-t-transparent rounded-full"></div>
-                    <span className="hidden sm:inline">Validando...</span>
-                    <span className="sm:hidden">...</span>
-                  </div>
-                </div>
-              )}
+              {/* Indicador de validação removido */}
               {Array.from({ length: wordLength }, (_, colIndex) => (
                 <LetterTile
                   key={colIndex}
