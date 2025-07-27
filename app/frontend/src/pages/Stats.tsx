@@ -14,12 +14,11 @@ const Stats: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
+    let intervalId: NodeJS.Timeout;
     const loadStats = async () => {
       setLoading(true);
-      // Tenta buscar estatísticas globais do backend
       const globalStats = await statsService.fetchGlobalStats();
       if (globalStats) {
-        // Adiciona winRate e averageAttempts se existirem no backend, senão calcula
         setStats({
           ...globalStats,
           winRate:
@@ -30,23 +29,24 @@ const Stats: React.FC = () => {
             let totalAttempts = 0;
             let totalWonGames = 0;
             if (globalStats.guessDistribution) {
-            Object.entries(globalStats.guessDistribution).forEach(([attempts, count]) => {
+              Object.entries(globalStats.guessDistribution).forEach(([attempts, count]) => {
                 const numCount = typeof count === 'number' ? count : Number(count);
                 totalAttempts += parseInt(attempts) * numCount;
                 totalWonGames += numCount;
-            });
+              });
             }
             return totalWonGames > 0 ? Math.round((totalAttempts / totalWonGames) * 10) / 10 : 0;
           })(),
         });
       } else {
-        // Fallback para estatísticas locais
         const formattedStats = statsService.getFormattedStats();
         setStats(formattedStats);
       }
       setLoading(false);
     };
     loadStats();
+    intervalId = setInterval(loadStats, 10000); // Atualiza a cada 10 segundos
+    return () => clearInterval(intervalId);
   }, []);
 
   const handleResetStats = () => {

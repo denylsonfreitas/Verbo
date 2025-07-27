@@ -218,12 +218,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       const response = await authService.login(loginValue, password);
       dispatch({ type: 'LOGIN_SUCCESS', payload: response });
-      
+
+      // Limpa histórico local ao logar em uma conta
+      await import('../services/historyService').then(m => m.historyService.clearHistory());
+
       // Sincronizar dados locais após login bem-sucedido
       try {
         const localStats = statsService.loadStats();
         const localHistory = historyService.loadHistory();
-        
+
         // Só sincronizar se houver dados locais
         if (localStats.gamesPlayed > 0 || localHistory.length > 0) {
           console.log('Dados locais encontrados para sincronização após login:', {
@@ -239,7 +242,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         console.error('Erro ao sincronizar dados após login:', syncError);
         // Não falhar o login por causa da sincronização
       }
-      
+
       return true;
     } catch (error: any) {
       // Com o novo sistema de erros, a mensagem está diretamente em error.message
