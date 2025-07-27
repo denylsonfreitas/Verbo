@@ -290,6 +290,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Função de logout
   const logout = useCallback(() => {
     authService.logout();
+    // Limpa histórico local ao sair da conta
+    import('../services/historyService').then(m => m.historyService.clearHistory());
     dispatch({ type: 'LOGOUT' });
   }, []);
 

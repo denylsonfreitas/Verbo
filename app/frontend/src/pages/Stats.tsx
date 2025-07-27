@@ -14,12 +14,38 @@ const Stats: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
-    const loadStats = () => {
-      const formattedStats = statsService.getFormattedStats();
-      setStats(formattedStats);
+    const loadStats = async () => {
+      setLoading(true);
+      // Tenta buscar estatísticas globais do backend
+      const globalStats = await statsService.fetchGlobalStats();
+      if (globalStats) {
+        // Adiciona winRate e averageAttempts se existirem no backend, senão calcula
+        setStats({
+          ...globalStats,
+          winRate:
+            globalStats.gamesPlayed > 0
+              ? Math.round((globalStats.gamesWon / globalStats.gamesPlayed) * 100)
+              : 0,
+          averageAttempts: (() => {
+            let totalAttempts = 0;
+            let totalWonGames = 0;
+            if (globalStats.guessDistribution) {
+            Object.entries(globalStats.guessDistribution).forEach(([attempts, count]) => {
+                const numCount = typeof count === 'number' ? count : Number(count);
+                totalAttempts += parseInt(attempts) * numCount;
+                totalWonGames += numCount;
+            });
+            }
+            return totalWonGames > 0 ? Math.round((totalAttempts / totalWonGames) * 10) / 10 : 0;
+          })(),
+        });
+      } else {
+        // Fallback para estatísticas locais
+        const formattedStats = statsService.getFormattedStats();
+        setStats(formattedStats);
+      }
       setLoading(false);
     };
-
     loadStats();
   }, []);
 
@@ -55,7 +81,7 @@ const Stats: React.FC = () => {
     );
   }
 
-  const maxDistribution = Math.max(...Object.values(stats.guessDistribution));
+  const maxDistribution = Math.max(...Object.values(stats.guessDistribution ?? { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0 }));
 
   return (
     <div className="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
@@ -162,12 +188,9 @@ const Stats: React.FC = () => {
         </h2>
         <div className="space-y-2 sm:space-y-3">
           {[1, 2, 3, 4, 5, 6].map(tentativas => {
-            const count =
-              stats.guessDistribution[
-                tentativas as keyof typeof stats.guessDistribution
-              ];
-            const percentage =
-              maxDistribution > 0 ? (count / maxDistribution) * 100 : 0;
+            const guessDist = stats.guessDistribution ?? { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0 };
+            const count = guessDist[tentativas as keyof typeof guessDist] ?? 0;
+            const percentage = maxDistribution > 0 ? (count / maxDistribution) * 100 : 0;
 
             return (
               <div key={tentativas} className="flex items-center">

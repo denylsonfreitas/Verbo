@@ -187,4 +187,15 @@ export const statsService = {
     // Também limpar o histórico de palavras
     historyService.clearHistory();
   },
+  // Buscar estatísticas globais do backend
+  async fetchGlobalStats(): Promise<any> {
+    try {
+      // Usa o objeto api para fazer a requisição
+      const response = await import('./api').then(m => m.api.get('/api/verb/stats'));
+      return response;
+    } catch (error) {
+      console.error('Erro ao buscar estatísticas globais:', error);
+      return null;
+    }
+  },
 };

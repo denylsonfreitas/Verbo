@@ -189,15 +189,20 @@ function generateFeedback(attempt: string, correctWord: string) {
 }
 
 // GET /api/verb/stats - Get usage statistics
-router.get('/stats', async (_: any, res: any) => {
+const { authenticateJWT } = require('../middleware/auth');
+router.get('/stats', authenticateJWT, async (req: any, res: any) => {
   try {
-    const stats = await Verb.getUsageStats();
-    res.json(stats);
+    // Retorna as estatísticas do usuário autenticado
+    const user = req.user;
+    if (!user || !user.stats) {
+      return res.status(404).json({ error: 'Usuário não encontrado ou sem estatísticas' });
+    }
+    res.json(user.stats);
   } catch (error) {
-    console.error('Erro ao buscar estatísticas:', error);
+    console.error('Erro ao buscar estatísticas do usuário:', error);
     res.status(500).json({
       error: 'Erro interno do servidor',
-      message: 'Não foi possível buscar as estatísticas',
+      message: 'Não foi possível buscar as estatísticas do usuário',
     });
   }
 });
