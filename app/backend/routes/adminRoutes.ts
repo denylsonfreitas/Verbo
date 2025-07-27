@@ -133,6 +133,17 @@ router.get(
   }
 );
 
+// POST /api/admin/verbs/reset - Resetar todos os verbos (admin)
+router.post('/verbs/reset', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
+  try {
+    await Verb.resetAllVerbs();
+    res.json({ success: true, message: 'Todos os verbos foram resetados com sucesso.' });
+  } catch (error) {
+    console.error('Erro ao resetar verbos:', error);
+    res.status(500).json({ error: 'Erro ao resetar verbos.' });
+  }
+});
+
 // PUT /api/admin/verbs/:id - Update verb
 router.put(
   '/verbs/:id',
