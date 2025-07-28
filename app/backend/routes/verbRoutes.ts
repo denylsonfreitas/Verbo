@@ -211,6 +211,7 @@ router.get('/stats', authenticateJWT, async (req: any, res: any) => {
         lastPlayedDate: null,
         lastWonDate: null
       };
+      user.markModified('stats');
       await user.save();
     }
     console.log('[STATS] Estatísticas retornadas:', user.stats);
