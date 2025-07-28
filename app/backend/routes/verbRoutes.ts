@@ -194,13 +194,10 @@ router.get('/stats', authenticateJWT, async (req: any, res: any) => {
   try {
     // Retorna as estatísticas do usuário autenticado
     const user = req.user;
-    console.log('[STATS] Usuário autenticado:', user ? user.username : null, 'ID:', user ? user._id : null);
     if (!user) {
-      console.log('[STATS] Usuário não encontrado');
       return res.status(404).json({ error: 'Usuário não encontrado' });
     }
     if (!user.stats) {
-      console.log('[STATS] Usuário sem estatísticas, inicializando stats padrão');
       user.stats = {
         statId: '',
         gamesPlayed: 0,
@@ -214,7 +211,6 @@ router.get('/stats', authenticateJWT, async (req: any, res: any) => {
       user.markModified('stats');
       await user.save();
     }
-    console.log('[STATS] Estatísticas retornadas:', user.stats);
     res.json(user.stats);
   } catch (error) {
     console.error('Erro ao buscar estatísticas do usuário:', error);
