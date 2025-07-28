@@ -194,9 +194,12 @@ router.get('/stats', authenticateJWT, async (req: any, res: any) => {
   try {
     // Retorna as estatísticas do usuário autenticado
     const user = req.user;
+    console.log('[STATS] Usuário autenticado:', user ? user.username : null, 'ID:', user ? user._id : null);
     if (!user || !user.stats) {
+      console.log('[STATS] Usuário não encontrado ou sem estatísticas');
       return res.status(404).json({ error: 'Usuário não encontrado ou sem estatísticas' });
     }
+    console.log('[STATS] Estatísticas retornadas:', user.stats);
     res.json(user.stats);
   } catch (error) {
     console.error('Erro ao buscar estatísticas do usuário:', error);

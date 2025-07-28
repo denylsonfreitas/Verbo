@@ -26,12 +26,14 @@ export const authenticateJWT = async (
   req: Request,
   res: Response,
   next: NextFunction
-): Promise<void> => {
+) => {
   try {
     // Buscar token no header Authorization
     const authHeader = req.headers.authorization;
+    console.log('[AUTH] Authorization header:', authHeader);
     
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.log('[AUTH] Token ausente ou malformado');
       res.status(401).json({
         error: 'Token de acesso requerido',
         message: 'Forneça um token válido no header Authorization'
@@ -40,16 +42,26 @@ export const authenticateJWT = async (
     }
 
     const token = authHeader.substring(7); // Remove "Bearer "
+    console.log('[AUTH] Token recebido:', token);
     
     if (!process.env.JWT_SECRET) {
+      console.log('[AUTH] JWT_SECRET não configurado');
       throw new Error('JWT_SECRET não configurado');
     }
 
     // Verificar e decodificar o token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET) as JWTPayload;
-    
+    let decoded: JWTPayload;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET) as JWTPayload;
+      console.log('[AUTH] Token decodificado:', decoded);
+    } catch (err) {
+      console.log('[AUTH] Erro ao decodificar token:', err);
+      throw err;
+    }
+
     // Buscar usuário no banco
     const user = await User.findById(decoded.userId);
+    console.log('[AUTH] Usuário encontrado:', user ? user.username : null);
     
     if (!user || !user.isActive) {
       await AuditLogger.logInvalidToken(req, 'Usuário não encontrado ou inativo');
@@ -67,6 +79,7 @@ export const authenticateJWT = async (
     next();
   } catch (error) {
     if (error instanceof jwt.JsonWebTokenError) {
+      console.log('[AUTH] JWT JsonWebTokenError:', error.message);
       await AuditLogger.logInvalidToken(req, error.message);
       res.status(401).json({
         error: 'Token inválido',
@@ -78,7 +91,7 @@ export const authenticateJWT = async (
     console.error('Erro na autenticação JWT:', error);
     res.status(500).json({
       error: 'Erro interno do servidor',
-      message: 'Erro ao processar autenticação'
+      message: 'Erro ao processar autenticação JWT'
     });
   }
 };
