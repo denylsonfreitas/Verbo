@@ -27,7 +27,10 @@ app.use(
   cors({
     origin:
       process.env.NODE_ENV === 'production'
-        ? ['https://verbogame.vercel.app']
+        ? [
+            'https://verbogame.vercel.app',
+            process.env.FRONTEND_URL || 'https://verbogame.vercel.app',
+          ]
         : ['http://localhost:3000'],
     credentials: true,
   })

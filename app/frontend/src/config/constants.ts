@@ -1,11 +1,12 @@
 export const config = {
   // API Configuration
-  API_BASE_URL: (import.meta as any).env?.VITE_API_URL || 'http://localhost:5000',
-  
+  API_BASE_URL:
+    (import.meta as any).env?.VITE_API_URL || 'http://localhost:5000',
+
   // Game Configuration
   WORD_LENGTH: 5,
   MAX_ATTEMPTS: 6,
-  
+
   // Storage Keys
   STORAGE_KEYS: {
     GAME_STATE: 'verbo-game',
@@ -16,7 +17,7 @@ export const config = {
     HARD_MODE: 'verbo_hard_mode',
     PLAYER_ID: 'verbo_player_id',
   },
-  
+
   // Game Constants
   LETTER_STATUS: {
     CORRECT: 'correct',
@@ -24,17 +25,17 @@ export const config = {
     INCORRECT: 'incorrect',
     ABSENT: 'absent',
   } as const,
-  
+
   // Timing
   ANIMATION_DURATION: 300,
   CONFETTI_DURATION: 3000,
-  
+
   // Validation
   PATTERNS: {
     LETTERS_ONLY: /^[a-zA-ZÀ-ÿ\u00C0-\u017F]+$/,
     VERB_SUFFIXES: ['ar', 'er', 'ir', 'or'],
   },
-  
+
   // Error Messages
   ERRORS: {
     REQUIRED_WORD: 'A palavra é obrigatória',
@@ -44,7 +45,7 @@ export const config = {
     NETWORK_ERROR: 'Erro de conexão. Tente novamente.',
     UNKNOWN_ERROR: 'Algo deu errado. Tente novamente.',
   },
-  
+
   // Success Messages
   SUCCESS: {
     GAME_WON: 'Parabéns! Você acertou!',
@@ -54,4 +55,5 @@ export const config = {
   },
 } as const;
 
-export type LetterStatus = typeof config.LETTER_STATUS[keyof typeof config.LETTER_STATUS];
+export type LetterStatus =
+  (typeof config.LETTER_STATUS)[keyof typeof config.LETTER_STATUS];

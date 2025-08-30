@@ -9,7 +9,8 @@
     "test": "jest",
     "seed": "ts-node scripts/seed.ts",
     "seed:users": "ts-node scripts/seedUsers.ts",
-    "build": "tsc"
+    "build": "tsc",
+    "postbuild": "echo 'Build completed successfully'"
   },
   "dependencies": {
     "@types/nodemailer": "^6.4.17",
